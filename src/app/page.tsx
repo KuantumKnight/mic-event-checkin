@@ -19,7 +19,8 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { BrandMark } from "@/components/brand-mark";
 
 type View = "overview" | "events" | "scanner" | "attendees";
@@ -39,12 +40,41 @@ const attendees = [
 ];
 
 export default function Home() {
+  const [authState, setAuthState] = useState<"loading" | "signed-out" | "signed-in">(process.env.NEXT_PUBLIC_SUPABASE_URL ? "loading" : "signed-in");
   const [view, setView] = useState<View>("overview");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState(eventSeed[0].id);
   const [events, setEvents] = useState(eventSeed);
   const [showNewEvent, setShowNewEvent] = useState(false);
   const [showInsight, setShowInsight] = useState(false);
+
+  useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+    fetch("/api/events")
+      .then(async (response) => {
+        if (response.status === 401) {
+          setAuthState("signed-out");
+          return;
+        }
+        if (!response.ok) throw new Error("Could not load events");
+        setAuthState("signed-in");
+        const payload = await response.json() as { events?: Array<{ id: string; name: string; starts_at: string; location: string; registered: number; capacity: number }> };
+        if (!payload.events?.length) return;
+        setEvents(payload.events.map((event, index) => ({
+          id: event.id,
+          name: event.name,
+          date: new Date(event.starts_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }),
+          location: event.location,
+          registered: event.registered,
+          checkedIn: 0,
+          capacity: event.capacity,
+          accent: (["violet", "blue", "green", "orange"] as const)[index % 4],
+          status: index === 0 ? "Live now" : "Upcoming",
+        })));
+        setSelectedEventId(payload.events[0].id);
+      })
+      .catch(() => setAuthState("signed-in"));
+  }, []);
 
   const selectedEvent = useMemo(
     () => events.find((event) => event.id === selectedEventId) ?? events[0],
@@ -75,6 +105,9 @@ export default function Home() {
   function markDemoCheckIn() {
     setEvents((current) => current.map((event) => event.id === selectedEvent.id ? { ...event, checkedIn: Math.min(event.checkedIn + 1, event.registered) } : event));
   }
+
+  if (authState === "loading") return <main className="auth-loading"><BrandMark /><span>Loading your workspace…</span></main>;
+  if (authState === "signed-out") return <SignedOutView />;
 
   return (
     <main className="app-shell">
@@ -128,6 +161,10 @@ export default function Home() {
       {showInsight && <div className="modal-backdrop" role="presentation"><div className="modal-card insight-modal" role="dialog" aria-modal="true" aria-labelledby="insight-title"><div className="modal-heading"><div><span className="eyebrow">AI event insight</span><h2 id="insight-title">Tonight at a glance</h2></div><button className="icon-button" onClick={() => setShowInsight(false)} aria-label="Close"><X size={18} /></button></div><div className="insight-answer"><Sparkles size={18} /><p>86 of 128 registered attendees have checked in so far. That puts tonight at <strong>67.2%</strong> attendance, with <strong>94 spots</strong> still open.</p></div><div className="insight-source">Based on live event data · AI explanations never invent the numbers</div></div></div>}
     </main>
   );
+}
+
+function SignedOutView() {
+  return <main className="signed-out-page"><div className="signed-out-card"><BrandMark /><span className="eyebrow">MIC event check-in</span><h1>Make the room feel ready.</h1><p>Sign in to create events, register attendees, scan QR codes, and watch the room fill in realtime.</p><Link className="button button-primary" href="/login">Enter workspace <ArrowUpRight size={16} /></Link><span className="signed-out-note">Demo data is available after authentication is configured.</span></div></main>;
 }
 
 function NavItem({ icon, label, active = false, badge, onClick }: { icon: React.ReactNode; label: string; active?: boolean; badge?: string; onClick?: () => void }) {
