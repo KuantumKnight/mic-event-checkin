@@ -3,6 +3,8 @@ export type PendingCheckin = {
   qrToken: string;
   stationId: string;
   createdAt: string;
+  state?: "pending" | "expired" | "failed";
+  lastError?: string;
 };
 
 const DB_NAME = "mic-checkin-offline";
@@ -10,8 +12,10 @@ const STORE_NAME = "pending-checkins";
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 1);
-    request.onupgradeneeded = () => request.result.createObjectStore(STORE_NAME, { keyPath: "clientEventId" });
+    const request = indexedDB.open(DB_NAME, 2);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(STORE_NAME)) request.result.createObjectStore(STORE_NAME, { keyPath: "clientEventId" });
+    };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
@@ -50,17 +54,23 @@ export async function removeQueuedCheckin(clientEventId: string) {
 
 export async function syncQueuedCheckins() {
   const pending = await readQueuedCheckins();
-  const results: Array<{ item: PendingCheckin; status: "accepted" | "already_checked_in" | "failed" }> = [];
+  const results: Array<{ item: PendingCheckin; status: "accepted" | "already_checked_in" | "expired" | "failed" }> = [];
   for (const item of pending) {
+    if (item.state && item.state !== "pending") continue;
     try {
       const response = await fetch("/api/checkins", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(item),
       });
-      if (response.ok || response.status === 409 || response.status === 410 || response.status === 400) {
+      if (response.ok || response.status === 409) {
         await removeQueuedCheckin(item.clientEventId);
-        results.push({ item, status: response.ok ? "accepted" : response.status === 409 ? "already_checked_in" : "failed" });
+        results.push({ item, status: response.ok ? "accepted" : "already_checked_in" });
+      } else if (response.status === 410 || response.status === 400) {
+        const status = response.status === 410 ? "expired" : "failed";
+        const nextState: PendingCheckin = { ...item, state: status, lastError: response.status === 410 ? "QR expired before this station reconnected." : "QR was rejected during reconciliation." };
+        await queueCheckin(nextState);
+        results.push({ item: nextState, status });
       }
     } catch {
       // Keep the item queued. A later online event will retry it.

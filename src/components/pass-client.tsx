@@ -1,0 +1,24 @@
+"use client";
+
+import { CheckCircle2, Clock3, Loader2, RefreshCw, Ticket } from "lucide-react";
+import QRCode from "qrcode";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+
+type PassData = { id: string; display_name: string; email: string; events: { id: string; name: string; description: string | null; starts_at: string; ends_at: string | null; location: string } | null; checkins: Array<{ checked_in_at: string; station_id: string }> };
+
+export function PassClient({ initialRegistration }: { initialRegistration: PassData }) {
+  const [registration, setRegistration] = useState(initialRegistration);
+  const [token, setToken] = useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(0);
+  const [busy, setBusy] = useState(true);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const refresh = useCallback(async () => { if (registration.checkins?.[0]) { setBusy(false); return; } setBusy(true); const response = await fetch(`/api/registrations/${registration.id}/token`, { method: "POST" }); const body = await response.json().catch(() => ({})); if (response.ok && body.token) { setToken(body.token.qr_token); setExpiresAt(body.token.token_expires_at); } setBusy(false); }, [registration]);
+  useEffect(() => { void refresh(); const supabase = createClient(); const channel = supabase.channel(`registration-${registration.id}`).on("postgres_changes", { event: "*", schema: "public", table: "checkins", filter: `registration_id=eq.${registration.id}` }, async () => { const response = await fetch(`/api/registrations/${registration.id}`, { cache: "no-store" }); if (response.ok) { const body = await response.json(); setRegistration(body.registration); } }); channel.subscribe(); return () => { void supabase.removeChannel(channel); }; }, [registration.id, refresh]);
+  useEffect(() => { const timer = window.setInterval(() => { setSecondsLeft(expiresAt ? Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000)) : 0); }, 1000); return () => window.clearInterval(timer); }, [expiresAt]);
+  useEffect(() => { if (canvasRef.current && token && secondsLeft > 0) void QRCode.toCanvas(canvasRef.current, token, { width: 360, margin: 1, color: { dark: "#0d0e10", light: "#ffffff" } }); }, [token, secondsLeft]);
+  const checkedIn = registration.checkins?.[0]; const event = registration.events;
+  if (!event) return <main className="pass-page"><p>Event details unavailable.</p></main>;
+  return <main className="pass-page"><header className="pass-header"><span className="wordmark">MIC <small>PASS</small></span><span className="pass-live"><span className="online-dot"></span> Live pass</span></header><section className="pass-card"><div className="pass-card-top"><div><span className="eyebrow">Attendee pass</span><h1>{event.name}</h1><p>{new Date(event.starts_at).toLocaleString("en-IN", { dateStyle: "full", timeStyle: "short" })}<br />{event.location}</p></div><Ticket size={27} /></div>{checkedIn ? <div className="checked-in-state"><CheckCircle2 size={48} /><span className="eyebrow">Checked in at {new Date(checkedIn.checked_in_at).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}</span><h2>Welcome in, {registration.display_name.split(" ")[0]}.</h2><p>This pass has been accepted by {checkedIn.station_id}.</p></div> : <div className="qr-state">{busy ? <div className="qr-loading"><Loader2 size={23} className="spin" /> Preparing your QR…</div> : token && secondsLeft > 0 ? <><canvas ref={canvasRef} className="pass-qr" aria-label="Attendee QR code" /><div className="pass-countdown"><Clock3 size={15} /> Refreshes in {Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, "0")}</div><p className="pass-warning">Show this code at the MIC check-in desk. A token is valid for 10 minutes and is single-use.</p></> : <div className="qr-expired"><Clock3 size={24} /><strong>Your QR needs a refresh.</strong><p>Generate a new short-lived token before you arrive at the desk.</p><button className="button button-dark" onClick={() => void refresh}><RefreshCw size={15} /> Refresh QR</button></div>}</div>}<div className="pass-person"><span>Registered for</span><strong>{registration.display_name}</strong><small>{registration.email}</small></div></section><p className="pass-footer">Keep this screen open until the door. If the QR expires, refresh it while online.</p></main>;
+}

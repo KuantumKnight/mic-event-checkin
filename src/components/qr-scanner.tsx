@@ -3,8 +3,10 @@
 import { Camera, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-export function QrScanner({ onScan }: { onScan: (token: string) => void }) {
+export function QrScanner({ onScan }: { onScan: (token: string) => Promise<void> }) {
   const scannerRef = useRef<{ stop: () => Promise<void>; clear: () => void } | null>(null);
+  const scanLockRef = useRef(false);
+  const lastTokenRef = useRef({ token: "", at: 0 });
   const [status, setStatus] = useState("Starting camera…");
 
   useEffect(() => {
@@ -14,14 +16,18 @@ export function QrScanner({ onScan }: { onScan: (token: string) => void }) {
       const scanner = new module.Html5Qrcode("mic-qr-reader");
       scannerRef.current = scanner;
       try {
-        await scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 220, height: 220 } }, (decodedText) => {
+        await scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 220, height: 220 } }, async (decodedText) => {
           if (!active) return;
+          const now = Date.now();
+          if (scanLockRef.current || (decodedText === lastTokenRef.current.token && now - lastTokenRef.current.at < 1500)) return;
+          scanLockRef.current = true;
+          lastTokenRef.current = { token: decodedText, at: now };
           setStatus("QR captured. Validating…");
-          onScan(decodedText);
+          try { await onScan(decodedText); } finally { scanLockRef.current = false; }
         }, () => undefined);
         setStatus("Point the camera at an attendee QR code");
       } catch {
-        setStatus("Camera unavailable. Use the retry button or simulate a scan.");
+        setStatus("Camera unavailable. Use manual attendee lookup.");
       }
     }
     void start();

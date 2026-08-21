@@ -1,0 +1,12 @@
+"use client";
+
+import { Check, Loader2, Save } from "lucide-react";
+import { useState } from "react";
+import type { EventSummary } from "@/lib/event-types";
+
+export function EventSettingsForm({ event }: { event: EventSummary }) {
+  const [busy, setBusy] = useState(false); const [message, setMessage] = useState<string | null>(null); const [error, setError] = useState<string | null>(null);
+  async function submit(formEvent: React.FormEvent<HTMLFormElement>) { formEvent.preventDefault(); setBusy(true); setMessage(null); setError(null); const form = new FormData(formEvent.currentTarget); const response = await fetch(`/api/events/${event.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: String(form.get("name")), description: String(form.get("description") || ""), startsAt: new Date(String(form.get("startsAt"))).toISOString(), endsAt: String(form.get("endsAt")) ? new Date(String(form.get("endsAt"))).toISOString() : undefined, location: String(form.get("location")), capacity: Number(form.get("capacity")) }) }); const body = await response.json().catch(() => ({})); setBusy(false); if (!response.ok) setError(body.error || "Could not save changes."); else setMessage("Saved to Supabase."); }
+  const toInput = (value: string | null) => value ? new Date(value).toISOString().slice(0, 16) : "";
+  return <form className="form-card settings-form" onSubmit={submit}><span className="eyebrow">Event configuration</span><h2>Keep the record accurate.</h2><div className="form-grid"><label>Event name<input name="name" required defaultValue={event.name} /></label><label>Location<input name="location" required defaultValue={event.location} /></label><label>Starts at<input name="startsAt" type="datetime-local" required defaultValue={toInput(event.starts_at)} /></label><label>Ends at<input name="endsAt" type="datetime-local" defaultValue={toInput(event.ends_at)} /></label><label>Capacity<input name="capacity" type="number" min={1} max={10000} required defaultValue={event.capacity} /></label><label className="wide-field">Description<textarea name="description" rows={4} defaultValue={event.description || ""} /></label></div>{message && <p className="form-success"><Check size={15} /> {message}</p>}{error && <p className="form-error">{error}</p>}<button className="button button-primary" disabled={busy}>{busy ? <Loader2 size={16} className="spin" /> : <Save size={16} />} Save changes</button></form>;
+}
