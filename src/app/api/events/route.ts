@@ -18,8 +18,8 @@ export async function GET() {
 
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("events")
-    .select("id, organizer_id, name, description, starts_at, ends_at, location, capacity, created_at, registrations(id, checkins(id))")
+    .from("event_stats")
+    .select("id, organizer_id, name, description, starts_at, ends_at, location, capacity, created_at, registered_count, checked_in_count, spots_left")
     .order("starts_at", { ascending: true });
 
   if (error) return jsonError(error.message, supabaseErrorStatus(error.message));
@@ -27,9 +27,8 @@ export async function GET() {
   return NextResponse.json({
     events: (data ?? []).map((event) => ({
       ...event,
-      registered: event.registrations?.length ?? 0,
-      checkedIn: event.registrations?.filter((registration) => (registration.checkins?.length ?? 0) > 0).length ?? 0,
-      registrations: undefined,
+      registered: event.registered_count,
+      checkedIn: event.checked_in_count,
     })),
   });
 }
