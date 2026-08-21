@@ -20,8 +20,12 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { BrandMark } from "@/components/brand-mark";
+import { AttendeeHome } from "@/components/attendee-home";
+import { QrScanner } from "@/components/qr-scanner";
+import { queueCheckin, syncQueuedCheckins } from "@/lib/offline-queue";
+import { createClient } from "@/lib/supabase/client";
 
 type View = "overview" | "events" | "scanner" | "attendees";
 
@@ -41,6 +45,7 @@ const attendees = [
 
 export default function Home() {
   const [authState, setAuthState] = useState<"loading" | "signed-out" | "signed-in">(process.env.NEXT_PUBLIC_SUPABASE_URL ? "loading" : "signed-in");
+  const [role, setRole] = useState<"organizer" | "attendee" | null>(null);
   const [view, setView] = useState<View>("overview");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState(eventSeed[0].id);
@@ -48,32 +53,37 @@ export default function Home() {
   const [showNewEvent, setShowNewEvent] = useState(false);
   const [showInsight, setShowInsight] = useState(false);
 
+  async function loadLiveEvents() {
+    const response = await fetch("/api/events");
+    if (response.status === 401) {
+      setAuthState("signed-out");
+      return;
+    }
+    if (!response.ok) throw new Error("Could not load events");
+    setAuthState("signed-in");
+    const payload = await response.json() as { events?: Array<{ id: string; name: string; starts_at: string; location: string; registered: number; checkedIn: number; capacity: number }> };
+    if (!payload.events?.length) return;
+    setEvents(payload.events.map((event, index) => ({
+      id: event.id,
+      name: event.name,
+      date: new Date(event.starts_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }),
+      location: event.location,
+      registered: event.registered,
+      checkedIn: event.checkedIn,
+      capacity: event.capacity,
+      accent: (["violet", "blue", "green", "orange"] as const)[index % 4],
+      status: index === 0 ? "Live now" : "Upcoming",
+    })));
+    setSelectedEventId(payload.events[0].id);
+  }
+
   useEffect(() => {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
-    fetch("/api/events")
-      .then(async (response) => {
-        if (response.status === 401) {
-          setAuthState("signed-out");
-          return;
-        }
-        if (!response.ok) throw new Error("Could not load events");
-        setAuthState("signed-in");
-        const payload = await response.json() as { events?: Array<{ id: string; name: string; starts_at: string; location: string; registered: number; capacity: number }> };
-        if (!payload.events?.length) return;
-        setEvents(payload.events.map((event, index) => ({
-          id: event.id,
-          name: event.name,
-          date: new Date(event.starts_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }),
-          location: event.location,
-          registered: event.registered,
-          checkedIn: 0,
-          capacity: event.capacity,
-          accent: (["violet", "blue", "green", "orange"] as const)[index % 4],
-          status: index === 0 ? "Live now" : "Upcoming",
-        })));
-        setSelectedEventId(payload.events[0].id);
-      })
-      .catch(() => setAuthState("signed-in"));
+    loadLiveEvents().catch(() => setAuthState("signed-in"));
+    fetch("/api/me").then((response) => response.ok ? response.json() : null).then((payload) => setRole(payload?.profile?.role ?? null)).catch(() => undefined);
+    const supabase = createClient();
+    const channel = supabase.channel("mic-live-dashboard").on("postgres_changes", { event: "*", schema: "public", table: "checkins" }, () => { void loadLiveEvents(); }).subscribe();
+    return () => { void supabase.removeChannel(channel); };
   }, []);
 
   const selectedEvent = useMemo(
@@ -108,6 +118,7 @@ export default function Home() {
 
   if (authState === "loading") return <main className="auth-loading"><BrandMark /><span>Loading your workspace…</span></main>;
   if (authState === "signed-out") return <SignedOutView />;
+  if (role === "attendee") return <AttendeeHome />;
 
   return (
     <main className="app-shell">
@@ -180,5 +191,42 @@ function StatCard({ icon, label, value, trend, detail, tone }: { icon: React.Rea
 function TimelineItem({ time, title, detail, tone }: { time: string; title: string; detail: string; tone: string }) { return <div className="timeline-item"><div className={`timeline-dot ${tone}`} /><div className="timeline-copy"><div><strong>{title}</strong><time>{time}</time></div><span>{detail}</span></div></div>; }
 
 function EventsView({ events, selectedEventId, onSelect, onNew }: { events: typeof eventSeed; selectedEventId: string; onSelect: (id: string) => void; onNew: () => void }) { return <div className="content-wrap"><div className="page-heading"><div><span className="eyebrow">Workspace</span><h1>Your events</h1><p>A quiet place to set the room up well.</p></div><button className="button button-primary" onClick={onNew}>Create event <ArrowUpRight size={16} /></button></div><div className="event-table-card"><div className="table-toolbar"><div className="search-field"><Search size={16} /><input placeholder="Search events" /></div><button className="button button-secondary">All events <ChevronDown size={15} /></button></div><div className="event-table"><div className="table-row table-head"><span>Event</span><span>When</span><span>Registration</span><span>Status</span><span /></div>{events.map((event) => <button className={event.id === selectedEventId ? "table-row selected" : "table-row"} key={event.id} onClick={() => onSelect(event.id)}><span className="event-name-cell"><span className={`tiny-symbol ${event.accent}`}><QrCode size={14} /></span><strong>{event.name}</strong></span><span>{event.date}</span><span>{event.registered} / {event.capacity}</span><span><span className={event.status === "Live now" ? "status-badge live" : "status-badge"}>{event.status}</span></span><ArrowUpRight size={15} /></button>)}</div></div></div>; }
-function ScannerView({ event, onCheckIn }: { event: typeof eventSeed[number]; onCheckIn: () => void }) { const [lastScan, setLastScan] = useState<string | null>(null); return <div className="content-wrap"><div className="page-heading"><div><span className="eyebrow">Organizer tool</span><h1>Scan desk</h1><p>Scan a unique attendee QR code to check them in.</p></div><span className="live-pill"><span /> {event.name}</span></div><div className="scanner-layout"><div className="scanner-card"><div className="scanner-frame"><div className="scanner-corner top-left" /><div className="scanner-corner top-right" /><div className="scanner-corner bottom-left" /><div className="scanner-corner bottom-right" /><ScanLine size={42} strokeWidth={1.4} /><span>Camera preview will appear here</span></div><div className="scanner-controls"><button className="button button-primary" onClick={() => { setLastScan("Aarav Mehta"); onCheckIn(); }}><ScanLine size={17} /> Simulate QR scan</button><p>Offline scans are queued on this device and sync safely once the connection returns.</p></div></div><div className="scan-result-card"><span className="eyebrow">Last scan</span>{lastScan ? <><div className="scan-success"><Check size={18} /><span>Accepted</span></div><h2>{lastScan}</h2><p>Checked in just now · Design track</p><button className="text-button">View attendee record <ArrowUpRight size={14} /></button></> : <div className="empty-state"><QrCode size={30} /><h3>Ready when you are</h3><p>Point the camera at a single attendee QR code.</p></div>}</div></div></div>; }
+function ScannerView({ event, onCheckIn }: { event: typeof eventSeed[number]; onCheckIn: () => void }) {
+  const [lastScan, setLastScan] = useState<{ name: string; result: string; detail: string } | null>(null);
+  const [queued, setQueued] = useState(0);
+  const [online, setOnline] = useState(true);
+
+  useEffect(() => {
+    const sync = () => { void syncQueuedCheckins().then((results) => setQueued((current) => Math.max(current - results.length, 0))); };
+    const handleOnline = () => { setOnline(true); sync(); };
+    const handleOffline = () => setOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    sync();
+    return () => { window.removeEventListener("online", handleOnline); window.removeEventListener("offline", handleOffline); };
+  }, []);
+
+  const handleScan = useCallback(async (qrToken: string) => {
+    const clientEventId = crypto.randomUUID();
+    const payload = { qrToken, clientEventId, stationId: `scanner-${event.id}` };
+    if (!navigator.onLine) {
+      await queueCheckin({ ...payload, createdAt: new Date().toISOString() });
+      setQueued((current) => current + 1);
+      setLastScan({ name: "Offline scan queued", result: "Queued", detail: "This station will reconcile it when connection returns." });
+      return;
+    }
+    try {
+      const response = await fetch("/api/checkins", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const body = await response.json();
+      if (response.ok) { setLastScan({ name: body.checkin.attendee_name, result: "Accepted", detail: "Checked in just now · token consumed" }); onCheckIn(); return; }
+      setLastScan({ name: body.checkin?.attendee_name ?? "Unknown attendee", result: response.status === 409 ? "Already checked in" : "Rejected", detail: body.error ?? "The QR code was not accepted." });
+    } catch {
+      await queueCheckin({ ...payload, createdAt: new Date().toISOString() });
+      setQueued((current) => current + 1);
+      setLastScan({ name: "Connection interrupted", result: "Queued", detail: "The scan is stored on this station and will sync later." });
+    }
+  }, [event.id, onCheckIn]);
+
+  return <div className="content-wrap"><div className="page-heading"><div><span className="eyebrow">Organizer tool</span><h1>Scan desk</h1><p>Scan a unique attendee QR code to check them in.</p></div><span className="live-pill"><span /> {event.name}</span></div><div className="scanner-layout"><div className="scanner-card"><QrScanner onScan={handleScan} /><div className="scanner-controls"><button className="button button-secondary" onClick={() => void handleScan("demo-token-not-for-production")}><ScanLine size={17} /> Test scanner response</button><p><span className="status-dot" /> {online ? "Online" : "Offline"} · {queued ? `${queued} scan${queued === 1 ? "" : "s"} waiting to sync` : "No pending scans"}</p></div></div><div className="scan-result-card"><span className="eyebrow">Last scan</span>{lastScan ? <><div className={lastScan.result === "Accepted" ? "scan-success" : "scan-warning"}><Check size={18} /><span>{lastScan.result}</span></div><h2>{lastScan.name}</h2><p>{lastScan.detail}</p><button className="text-button">View attendee record <ArrowUpRight size={14} /></button></> : <div className="empty-state"><QrCode size={30} /><h3>Ready when you are</h3><p>Point the camera at a single attendee QR code.</p></div>}</div></div></div>;
+}
 function AttendeesView({ event }: { event: typeof eventSeed[number] }) { return <div className="content-wrap"><div className="page-heading"><div><span className="eyebrow">{event.name}</span><h1>Attendees</h1><p>{event.checkedIn} checked in · {event.registered - event.checkedIn} still to arrive.</p></div><button className="button button-secondary"><Download size={16} /> Export CSV</button></div><div className="attendees-card"><div className="table-toolbar"><div className="search-field"><Search size={16} /><input placeholder="Search attendees" /></div><span className="result-count">{event.registered} registrations</span></div><div className="attendee-table"><div className="table-row table-head"><span>Attendee</span><span>Track</span><span>Checked in at</span><span>Status</span></div>{attendees.map((attendee) => <div className="table-row" key={attendee.name}><span className="event-name-cell"><span className="mini-avatar">{attendee.initials}</span><strong>{attendee.name}</strong></span><span>{attendee.track}</span><span>{attendee.time}</span><span><span className="status-badge live">{attendee.status}</span></span></div>)}</div></div></div>; }
