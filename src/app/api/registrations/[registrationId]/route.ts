@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { jsonError } from "@/lib/http";
+import { jsonError, supabaseErrorStatus } from "@/lib/http";
 import { createClient, getProfile } from "@/lib/supabase/server";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ registrationId: string }> }) {

@@ -12,8 +12,9 @@ export default async function EventRegisterPage({ params }: { params: Promise<{ 
   if (profile.role !== "attendee") redirect("/events");
   const { eventId } = await params;
   const supabase = await createClient();
-  const { data: catalog } = await supabase.rpc("list_event_catalog");
-  const event = (catalog ?? []).find((item) => item.id === eventId) as EventSummary | undefined;
+  const { data: catalogData } = await supabase.rpc("list_event_catalog");
+  const catalog = (catalogData ?? []) as EventSummary[];
+  const event = catalog.find((item) => item.id === eventId);
   if (!event) notFound();
   return <EventRegistrationForm event={event} attendeeName={profile.full_name || String(claims?.email || "").split("@")[0]} attendeeEmail={String(claims?.email || "")} />;
 }
