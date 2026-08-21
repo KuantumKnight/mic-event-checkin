@@ -23,7 +23,7 @@ export function QrScanner({ onScan }: { onScan: (token: string) => Promise<void>
           scanLockRef.current = true;
           lastTokenRef.current = { token: decodedText, at: now };
           setStatus("QR captured. Validating…");
-          try { await onScan(decodedText); } finally { scanLockRef.current = false; }
+          try { await onScan(decodedText); } finally { scanLockRef.current = false; if (active) setStatus("Point the camera at an attendee QR code"); }
         }, () => undefined);
         setStatus("Point the camera at an attendee QR code");
       } catch {

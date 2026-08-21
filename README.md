@@ -63,6 +63,18 @@ pnpm test
 pnpm test:e2e
 ```
 
+For an interview-ready organizer account, seed Auth and the matching profile through the Supabase Admin API in one command. Keep the service-role key out of `.env.local` commits:
+
+```bash
+$env:NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+$env:SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+$env:DEMO_ORGANIZER_EMAIL="demo@example.com"
+$env:DEMO_ORGANIZER_PASSWORD="use-a-long-password"
+pnpm seed:organizer
+```
+
+The script is idempotent: it creates the confirmed user if needed and promotes only that exact email. New accounts otherwise default to attendee.
+
 Apply the SQL migrations in `supabase/migrations` to a Supabase project. The browser only receives the publishable key; RLS and the authenticated API boundary protect data access.
 
 ## Honest tradeoffs

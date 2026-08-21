@@ -10,6 +10,7 @@ const createEventSchema = z.object({
   endsAt: z.string().datetime().optional(),
   location: z.string().trim().min(2).max(160).default("MIC Commons"),
   capacity: z.number().int().min(1).max(10000),
+  status: z.enum(["draft", "published"]).default("published"),
 });
 
 export async function GET() {
@@ -19,7 +20,7 @@ export async function GET() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("event_stats")
-    .select("id, organizer_id, name, description, starts_at, ends_at, location, capacity, created_at, registered_count, checked_in_count, spots_left")
+    .select("id, organizer_id, name, description, starts_at, ends_at, location, capacity, created_at, registered_count, checked_in_count, spots_left, status")
     .order("starts_at", { ascending: true });
 
   if (error) return jsonError(error.message, supabaseErrorStatus(error.message));
@@ -52,8 +53,9 @@ export async function POST(request: Request) {
       ends_at: parsed.data.endsAt,
       location: parsed.data.location,
       capacity: parsed.data.capacity,
+      status: parsed.data.status,
     })
-    .select("id, organizer_id, name, description, starts_at, ends_at, location, capacity, created_at")
+    .select("id, organizer_id, name, description, starts_at, ends_at, location, capacity, created_at, status")
     .single();
 
   if (error) return jsonError(error.message, supabaseErrorStatus(error.message));

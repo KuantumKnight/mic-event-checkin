@@ -1,19 +1,19 @@
 import { notFound, redirect } from "next/navigation";
 import { EventRegistrationForm } from "@/components/event-registration-form";
 import type { EventSummary } from "@/lib/event-types";
-import { createClient, getProfile } from "@/lib/supabase/server";
+import { createClient, getClaims, getProfile } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function EventRegisterPage({ params }: { params: Promise<{ eventId: string }> }) {
   const profile = await getProfile();
+  const claims = await getClaims();
   if (!profile) redirect("/login");
   if (profile.role !== "attendee") redirect("/events");
   const { eventId } = await params;
   const supabase = await createClient();
-  const { data } = await supabase.from("events").select("id, name, description, starts_at, ends_at, location, capacity").eq("id", eventId).single();
-  if (!data) notFound();
-  const { count } = await supabase.from("registrations").select("id", { count: "exact", head: true }).eq("event_id", eventId);
-  const event = { ...data, registered_count: count ?? 0, checked_in_count: 0, spots_left: Math.max(data.capacity - (count ?? 0), 0) } as EventSummary;
-  return <EventRegistrationForm event={event} />;
+  const { data: catalog } = await supabase.rpc("list_event_catalog");
+  const event = (catalog ?? []).find((item) => item.id === eventId) as EventSummary | undefined;
+  if (!event) notFound();
+  return <EventRegistrationForm event={event} attendeeName={profile.full_name || String(claims?.email || "").split("@")[0]} attendeeEmail={String(claims?.email || "")} />;
 }

@@ -1,4 +1,5 @@
 export type PendingCheckin = {
+  eventId: string;
   clientEventId: string;
   qrToken: string;
   stationId: string;
@@ -12,7 +13,7 @@ const STORE_NAME = "pending-checkins";
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 2);
+    const request = indexedDB.open(DB_NAME, 3);
     request.onupgradeneeded = () => {
       if (!request.result.objectStoreNames.contains(STORE_NAME)) request.result.createObjectStore(STORE_NAME, { keyPath: "clientEventId" });
     };
@@ -57,12 +58,25 @@ export async function syncQueuedCheckins() {
   const results: Array<{ item: PendingCheckin; status: "accepted" | "already_checked_in" | "expired" | "failed" }> = [];
   for (const item of pending) {
     if (item.state && item.state !== "pending") continue;
+    if (!item.eventId) {
+      const failed: PendingCheckin = { ...item, eventId: "", state: "failed", lastError: "This scan was created by an older station version and cannot be reconciled." };
+      await queueCheckin(failed);
+      results.push({ item: failed, status: "failed" });
+      continue;
+    }
     try {
       const response = await fetch("/api/checkins", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(item),
       });
+      const body = await response.json().catch(() => ({}));
+      if (response.status === 409 && /another event/i.test(body.error || "")) {
+        const failed: PendingCheckin = { ...item, state: "failed", lastError: "Pass belongs to another event and was not reconciled." };
+        await queueCheckin(failed);
+        results.push({ item: failed, status: "failed" });
+        continue;
+      }
       if (response.ok || response.status === 409) {
         await removeQueuedCheckin(item.clientEventId);
         results.push({ item, status: response.ok ? "accepted" : "already_checked_in" });

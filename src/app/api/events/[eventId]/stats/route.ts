@@ -10,7 +10,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ eve
   const { eventId } = await params;
   const supabase = await createClient();
   const [{ data: stats, error: statsError }, { data: attendees, error: attendeesError }] = await Promise.all([
-    supabase.from("event_stats").select("id, organizer_id, name, description, starts_at, ends_at, location, capacity, registered_count, checked_in_count, spots_left").eq("id", eventId).single(),
+    supabase.from("event_stats").select("id, organizer_id, name, description, starts_at, ends_at, location, capacity, registered_count, checked_in_count, spots_left, status").eq("id", eventId).single(),
     supabase.from("registrations").select("id, display_name, email, created_at, checkins(checked_in_at, station_id)").eq("event_id", eventId).order("created_at", { ascending: false }).limit(8),
   ]);
 

@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/unit/*.test.ts",
     "test:e2e": "playwright test",
+    "seed:organizer": "node scripts/seed-organizer.mjs",
     "proof:concurrency": "node scripts/concurrency-proof.mjs"
   },
   "dependencies": {

@@ -17,6 +17,7 @@ export type EventSummary = {
   registered_count: number;
   checked_in_count: number;
   spots_left: number;
+  status: "draft" | "published" | "cancelled" | "archived";
 };
 
 export type EventStats = EventSummary & {
@@ -38,4 +39,11 @@ export function formatEventDate(value: string) {
 
 export function formatShortTime(value: string | null) {
   return value ? new Intl.DateTimeFormat("en-IN", { hour: "numeric", minute: "2-digit" }).format(new Date(value)) : "—";
+}
+
+export function toLocalDateTimeInput(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
 }

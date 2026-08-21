@@ -59,7 +59,7 @@ if (!qrToken) {
 const checkins = await Promise.all(Array.from({ length: total }, (_, index) => request("/api/checkins", {
   method: "POST",
   headers: { "Content-Type": "application/json", Cookie: organizerCookie },
-  body: JSON.stringify({ qrToken, clientEventId: crypto.randomUUID(), stationId: `proof-${index}` }),
+  body: JSON.stringify({ eventId, qrToken, clientEventId: crypto.randomUUID(), stationId: `proof-${index}` }),
 })));
 
 const accepted = checkins.filter((result) => result.status === 200);
