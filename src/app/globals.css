@@ -296,6 +296,10 @@ input:focus,textarea:focus { border-color:#687057; box-shadow:0 0 0 2px #eaf1c6;
 .input-with-icon:focus-within { border-color:#687057; box-shadow:0 0 0 2px #eaf1c6; }
 .input-with-icon input { border:0; box-shadow:none; min-width:0; padding-left:8px; width:100%; }
 .auth-submit { margin-top:4px; min-height:44px; }
+.auth-google { gap:10px; justify-content:center; min-height:44px; width:100%; }
+.google-mark { flex:none; height:18px; width:18px; }
+.auth-divider { align-items:center; color:#9a9e99; display:flex; font-size:.68rem; gap:12px; margin:1px 0 2px; }
+.auth-divider::before, .auth-divider::after { background:var(--line); content:""; flex:1; height:1px; }
 .auth-forgot { justify-self:start; }
 .auth-message { background:#fff0ef; border:1px solid #f1c9c5; color:var(--danger); font-size:.75rem; padding:10px; }
 .auth-success { background:#eef7df; border-color:#c9dda1; color:#4e6d28; }

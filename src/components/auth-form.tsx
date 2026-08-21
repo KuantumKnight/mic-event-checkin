@@ -30,6 +30,24 @@ export function AuthForm() {
     await signUp.finalize({ navigate: ({ decorateUrl }) => { const url = decorateUrl("/"); window.location.href = url; } });
   }
 
+  async function signInWithGoogle() {
+    if (!signIn) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const result = await signIn.sso({
+        strategy: "oauth_google",
+        redirectCallbackUrl: "/sso-callback",
+        redirectUrl: "/",
+      });
+      if (result.error) showError(result.error);
+    } catch (error) {
+      showError(error as { message?: string });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!signIn || !signUp) return;
@@ -100,6 +118,12 @@ export function AuthForm() {
   const codeStep = flow === "verify-signup" || flow === "reset-code";
   return <div className="auth-card">
     {!recovery && flow !== "verify-signup" && <div className="auth-tabs"><button type="button" className={mode === "signin" ? "auth-tab active" : "auth-tab"} onClick={() => { setMode("signin"); setMessage(null); }}>Sign in</button><button type="button" className={mode === "signup" ? "auth-tab active" : "auth-tab"} onClick={() => { setMode("signup"); setMessage(null); }}>Create account</button></div>}
+    {!recovery && flow === "normal" && <>
+      <button type="button" className="button button-outline auth-google" onClick={() => void signInWithGoogle()} disabled={busy || !signIn}>
+        <GoogleMark /> {busy ? "Opening Google…" : "Continue with Google"}
+      </button>
+      <div className="auth-divider"><span>or use email</span></div>
+    </>}
     <form className="auth-form" onSubmit={submit}>
       {recovery ? <><span className="eyebrow">Account recovery</span><h3>{flow === "reset-password" ? "Choose a new password." : "Reset your password."}</h3><p>{flow === "reset-request" ? "Enter your account email and we will send a secure code." : flow === "reset-code" ? "Enter the verification code from your email." : "Your new password protects the workspace from here on."}</p></> : flow === "verify-signup" ? <><span className="eyebrow">Verify your account</span><h3>One last step.</h3><p>Enter the code sent to your email to activate your MIC account.</p></> : mode === "signup" && <label>Full name<input name="fullName" autoComplete="name" required placeholder="Your name" /></label>}
       {!codeStep && flow !== "reset-password" && <label><span>Email</span><div className="input-with-icon"><Mail size={16} /><input name="email" type="email" autoComplete="email" required placeholder="you@example.com" /></div></label>}
@@ -112,4 +136,8 @@ export function AuthForm() {
     </form>
     <p className="auth-note">Authentication is managed by Clerk. MIC keeps event ownership and attendance records in Supabase.</p>
   </div>;
+}
+
+function GoogleMark() {
+  return <svg aria-hidden="true" className="google-mark" viewBox="0 0 18 18" role="img"><path fill="#4285F4" d="M17.64 9.205c0-.638-.057-1.252-.164-1.841H9v3.482h4.844a4.14 4.14 0 0 1-1.796 2.716v2.258h2.909c1.703-1.568 2.683-3.878 2.683-6.615Z" /><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.909-2.258c-.806.54-1.835.86-3.047.86-2.344 0-4.33-1.584-5.04-3.714H.953v2.332A9 9 0 0 0 9 18Z" /><path fill="#FBBC05" d="M3.96 10.708A5.41 5.41 0 0 1 3.676 9c0-.593.102-1.17.284-1.708V4.96H.953A9 9 0 0 0 0 9c0 1.453.348 2.827.953 4.04l3.007-2.332Z" /><path fill="#EA4335" d="M9 3.578c1.322 0 2.508.454 3.442 1.344l2.582-2.582C13.463.89 11.426 0 9 0A9 9 0 0 0 .953 4.96L3.96 7.292C4.67 5.162 6.656 3.578 9 3.578Z" /></svg>;
 }
