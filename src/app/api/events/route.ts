@@ -18,6 +18,11 @@ export async function GET() {
   if (!profile) return jsonError("Sign in to view events.", 401);
 
   const supabase = await createClient();
+  if (profile.role === "attendee") {
+    const { data, error } = await supabase.rpc("list_event_catalog");
+    if (error) return jsonError(error.message, 400);
+    return NextResponse.json({ events: data ?? [] });
+  }
   const { data, error } = await supabase
     .from("event_stats")
     .select("id, organizer_id, name, description, starts_at, ends_at, location, capacity, created_at, registered_count, checked_in_count, spots_left, status")
