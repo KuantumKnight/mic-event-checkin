@@ -30,7 +30,8 @@ export default function SsoCallbackPage() {
 
         if (signUp.isTransferable) {
           await signIn.create({ transfer: true });
-          if (signIn.status === "complete") await finalizeSignIn();
+          const signInStatus = signIn.status as typeof signIn.status | "complete";
+          if (signInStatus === "complete") await finalizeSignIn();
           else window.location.assign("/login");
           return;
         }
