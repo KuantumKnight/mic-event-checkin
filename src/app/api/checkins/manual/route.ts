@@ -20,6 +20,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return jsonError("That attendee record is not valid.", 422, parsed.error.flatten());
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("manual_checkin_registration", {
+    p_actor_profile_id: profile.id,
     p_event_id: parsed.data.eventId,
     p_registration_id: parsed.data.registrationId,
     p_client_event_id: parsed.data.clientEventId,

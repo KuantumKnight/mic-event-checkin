@@ -23,7 +23,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   if (!profile) return jsonError("Sign in to cancel this registration.", 401);
   const { registrationId } = await params;
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("cancel_registration", { p_registration_id: registrationId });
+  const { data, error } = await supabase.rpc("cancel_registration", { p_actor_profile_id: profile.id, p_registration_id: registrationId });
   if (error) return jsonError(error.message, supabaseErrorStatus(error.message));
   return NextResponse.json({ result: data });
 }

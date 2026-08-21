@@ -12,6 +12,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ eve
 
   const { eventId } = await params;
   const supabase = await createClient();
+  const { data: event, error: eventError } = await supabase.from("events").select("id").eq("id", eventId).eq("organizer_id", profile.id).maybeSingle();
+  if (eventError) return jsonError(eventError.message, 400);
+  if (!event) return jsonError("Event not found.", 404);
   const { data, error } = await supabase
     .from("registrations")
     .select("display_name, email, created_at, checkins(checked_in_at, station_id)")

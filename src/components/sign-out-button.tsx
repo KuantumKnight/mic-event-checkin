@@ -1,13 +1,14 @@
 "use client";
 
 import { LogOut } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { useClerk } from "@clerk/nextjs";
 
 export function SignOutButton() {
-  async function signOut() {
-    await createClient().auth.signOut();
+  const { signOut } = useClerk();
+  async function handleSignOut() {
+    await signOut();
     window.location.assign("/login");
   }
 
-  return <button className="button button-quiet button-full" onClick={signOut}><LogOut size={15} /> Sign out</button>;
+  return <button className="button button-quiet button-full" onClick={() => void handleSignOut()}><LogOut size={15} /> Sign out</button>;
 }

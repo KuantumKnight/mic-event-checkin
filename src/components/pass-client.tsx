@@ -3,7 +3,6 @@
 import { CheckCircle2, Clock3, Loader2, RefreshCw, Ticket } from "lucide-react";
 import QRCode from "qrcode";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 type PassData = { id: string; display_name: string; email: string; events: { id: string; name: string; description: string | null; starts_at: string; ends_at: string | null; location: string } | null; checkins: Array<{ checked_in_at: string; station_id: string }> };
 
@@ -19,7 +18,7 @@ export function PassClient({ initialRegistration }: { initialRegistration: PassD
   const [cancelError, setCancelError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const refresh = useCallback(async () => { if (registration.checkins?.[0]) { setBusy(false); return; } setBusy(true); const response = await fetch(`/api/registrations/${registration.id}/token`, { method: "POST" }); const body = await response.json().catch(() => ({})); if (response.ok && body.token) { setToken(body.token.qr_token); setExpiresAt(body.token.token_expires_at); } setBusy(false); }, [registration]);
-  useEffect(() => { void refresh(); setOnline(navigator.onLine); const onlineHandler = () => setOnline(true); const offlineHandler = () => setOnline(false); window.addEventListener("online", onlineHandler); window.addEventListener("offline", offlineHandler); const supabase = createClient(); const channel = supabase.channel(`registration-${registration.id}`).on("postgres_changes", { event: "*", schema: "public", table: "checkins", filter: `registration_id=eq.${registration.id}` }, async () => { const response = await fetch(`/api/registrations/${registration.id}`, { cache: "no-store" }); if (response.ok) { const body = await response.json(); setRegistration(body.registration); } }); channel.subscribe(); return () => { window.removeEventListener("online", onlineHandler); window.removeEventListener("offline", offlineHandler); void supabase.removeChannel(channel); }; }, [registration.id, refresh]);
+  useEffect(() => { void refresh(); setOnline(navigator.onLine); const onlineHandler = () => setOnline(true); const offlineHandler = () => setOnline(false); const refreshRegistration = async () => { const response = await fetch(`/api/registrations/${registration.id}`, { cache: "no-store" }); if (response.ok) { const body = await response.json(); setRegistration(body.registration); } }; const timer = window.setInterval(() => void refreshRegistration(), 15000); window.addEventListener("online", onlineHandler); window.addEventListener("offline", offlineHandler); return () => { window.removeEventListener("online", onlineHandler); window.removeEventListener("offline", offlineHandler); window.clearInterval(timer); }; }, [registration.id, refresh]);
   useEffect(() => { const timer = window.setInterval(() => { setSecondsLeft(expiresAt ? Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000)) : 0); }, 1000); return () => window.clearInterval(timer); }, [expiresAt]);
   useEffect(() => { if (canvasRef.current && token && secondsLeft > 0) void QRCode.toCanvas(canvasRef.current, token, { width: 360, margin: 1, color: { dark: "#0d0e10", light: "#ffffff" } }); }, [token, secondsLeft]);
   const checkedIn = registration.checkins?.[0]; const event = registration.events;

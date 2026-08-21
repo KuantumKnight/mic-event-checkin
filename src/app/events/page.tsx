@@ -20,7 +20,7 @@ export default async function EventsPage() {
     const catalog = (data ?? []) as EventSummary[];
     return <AttendeeEvents initialEvents={catalog.map((event) => ({ ...event, organizer_id: undefined, created_at: undefined }))} profileName={profile.full_name || ""} />;
   }
-  const { data, error } = await supabase.from("event_stats").select("id, organizer_id, name, description, starts_at, ends_at, location, capacity, created_at, registered_count, checked_in_count, spots_left, status").order("starts_at", { ascending: true });
+  const { data, error } = await supabase.from("event_stats").select("id, organizer_id, name, description, starts_at, ends_at, location, capacity, created_at, registered_count, checked_in_count, spots_left, status").eq("organizer_id", profile.id).order("starts_at", { ascending: true });
   if (error) return <OrganizerShell profile={profile as Profile}><PageHeader eyebrow="Events" title="A clear list of every room." description="The event record could not be loaded." /><DataError message="Events could not be loaded." onRetry="/events" /></OrganizerShell>;
   const events = (data ?? []) as EventSummary[];
   return <OrganizerShell profile={profile as Profile}><PageHeader eyebrow="Events" title="A clear list of every room." description="Create, inspect, export, and open a check-in desk from the event record." action={<Link className="button button-primary" href="/events/new"><Plus size={16} /> New event</Link>} /><EventList events={events} /></OrganizerShell>;

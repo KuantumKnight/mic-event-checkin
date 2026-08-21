@@ -70,7 +70,7 @@ export async function POST(request: Request) {
   const parsed = insightSchema.safeParse(await request.json());
   if (!parsed.success) return jsonError("Ask a clear question about this event.", 422, parsed.error.flatten());
   const supabase = await createClient();
-  const { data: event, error: eventError } = await supabase.from("events").select("id, name, capacity").eq("id", parsed.data.eventId).single();
+  const { data: event, error: eventError } = await supabase.from("events").select("id, name, capacity").eq("id", parsed.data.eventId).eq("organizer_id", profile.id).single();
   if (eventError || !event) return jsonError("Event not found.", 404);
 
   const { data: registrations, error: registrationsError } = await supabase

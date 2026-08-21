@@ -26,6 +26,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from("event_stats")
     .select("id, organizer_id, name, description, starts_at, ends_at, location, capacity, created_at, registered_count, checked_in_count, spots_left, status")
+    .eq("organizer_id", profile.id)
     .order("starts_at", { ascending: true });
 
   if (error) return jsonError(error.message, supabaseErrorStatus(error.message));

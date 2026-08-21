@@ -20,6 +20,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return jsonError("That QR code is not valid.", 422, parsed.error.flatten());
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("redeem_checkin_token", {
+    p_actor_profile_id: profile.id,
     p_event_id: parsed.data.eventId,
     p_qr_token: parsed.data.qrToken,
     p_client_event_id: parsed.data.clientEventId,

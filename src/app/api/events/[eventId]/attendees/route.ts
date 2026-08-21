@@ -10,6 +10,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ even
   const { eventId } = await params;
   const query = new URL(request.url).searchParams.get("query")?.trim() ?? "";
   const supabase = await createClient();
+  const { data: event, error: eventError } = await supabase.from("events").select("id").eq("id", eventId).eq("organizer_id", profile.id).maybeSingle();
+  if (eventError) return jsonError(eventError.message, 400);
+  if (!event) return jsonError("Event not found.", 404);
   let attendeesQuery = supabase
     .from("registrations")
     .select("id, display_name, email, created_at, checkins(checked_in_at, station_id)")

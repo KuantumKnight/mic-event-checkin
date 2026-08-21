@@ -14,7 +14,7 @@ export default async function DashboardPage() {
   if (!profile) redirect("/login");
   if (profile.role === "attendee") return null;
   const supabase = await createClient();
-  const { data, error } = await supabase.from("event_stats").select("id, organizer_id, name, description, starts_at, ends_at, location, capacity, created_at, registered_count, checked_in_count, spots_left, status").order("starts_at", { ascending: true }).limit(6);
+  const { data, error } = await supabase.from("event_stats").select("id, organizer_id, name, description, starts_at, ends_at, location, capacity, created_at, registered_count, checked_in_count, spots_left, status").eq("organizer_id", profile.id).order("starts_at", { ascending: true }).limit(6);
   if (error) return <OrganizerShell profile={profile as Profile}><PageHeader eyebrow="Operations overview" title="The room, at a glance." description="The dashboard could not be loaded." /><DataError message="Dashboard data could not be loaded." onRetry="/dashboard" /></OrganizerShell>;
   const events = (data ?? []) as EventSummary[];
   const totalRegistered = events.reduce((sum, event) => sum + event.registered_count, 0);
