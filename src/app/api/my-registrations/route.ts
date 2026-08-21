@@ -12,5 +12,8 @@ export async function GET() {
     .eq("attendee_id", profile.id)
     .order("created_at", { ascending: false });
   if (error) return jsonError(error.message, 400);
-  return NextResponse.json({ registrations: data ?? [] });
+  return NextResponse.json({ registrations: (data ?? []).map((registration) => ({
+    ...registration,
+    events: Array.isArray(registration.events) ? registration.events[0] ?? null : registration.events,
+  })) });
 }

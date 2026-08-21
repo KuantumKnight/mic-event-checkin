@@ -15,5 +15,5 @@ export async function GET(_request: Request, { params }: { params: Promise<{ reg
     .maybeSingle();
   if (error) return jsonError(error.message, 400);
   if (!data) return jsonError("Pass not found.", 404);
-  return NextResponse.json({ registration: data });
+  return NextResponse.json({ registration: { ...data, events: Array.isArray(data.events) ? data.events[0] ?? null : data.events } });
 }
