@@ -298,6 +298,7 @@ input:focus,textarea:focus { border-color:#687057; box-shadow:0 0 0 2px #eaf1c6;
 .auth-submit { margin-top:4px; min-height:44px; }
 .auth-forgot { justify-self:start; }
 .auth-message { background:#fff0ef; border:1px solid #f1c9c5; color:var(--danger); font-size:.75rem; padding:10px; }
+.auth-success { background:#eef7df; border-color:#c9dda1; color:#4e6d28; }
 .auth-note { color:#989d97; font-size:.68rem; line-height:1.5; margin-top:23px; }
 
 /* Responsive */
