@@ -38,7 +38,8 @@ p { line-height:1.55; color:var(--muted); }
 .app-sidebar { background:#eceee8; border-right:1px solid var(--line); display:flex; flex-direction:column; padding:27px 20px 20px; }
 .sidebar-brand { display:block; margin-bottom:58px; }
 .brand { align-items:center; display:flex; gap:10px; }
-.brand-mark { align-items:center; background:var(--ink); border-radius:5px; color:var(--accent); display:inline-flex; height:27px; justify-content:center; width:27px; }
+.brand-mark { align-items:center; display:inline-flex; flex:none; height:36px; justify-content:center; width:36px; }
+.brand-mark img { display:block; height:100%; object-fit:contain; width:100%; }
 .brand-copy { display:flex; flex-direction:column; }
 .brand-copy strong { font-size:1.1rem; letter-spacing:.03em; line-height:1; }
 .brand-copy small { color:#777b75; font-size:.44rem; font-weight:700; letter-spacing:.12em; margin-top:4px; }
@@ -161,6 +162,7 @@ input:focus,textarea:focus { border-color:#687057; box-shadow:0 0 0 2px #eaf1c6;
 /* Scanner */
 .scanner-page { background:#f0f1ed; min-height:100vh; padding:30px clamp(20px,4vw,70px) 60px; }
 .scanner-header { align-items:center; display:flex; justify-content:space-between; margin:0 auto 28px; max-width:1450px; }
+.scanner-title { align-items:center; display:flex; gap:12px; }
 .scanner-header h1 { font-size:1.8rem; margin-top:7px; }
 .scanner-top-status { align-items:center; color:#5d625e; display:flex; font-size:.75rem; gap:8px; }
 .online-dot,.offline-dot { background:#50a66b; border-radius:50%; display:inline-block; height:8px; width:8px; }
@@ -212,8 +214,8 @@ input:focus,textarea:focus { border-color:#687057; box-shadow:0 0 0 2px #eaf1c6;
 .attendee-page { background:#fff; }
 .attendee-header,.attendee-section,.attendee-hero { margin:0 auto; max-width:1180px; }
 .attendee-header { align-items:center; display:flex; justify-content:space-between; padding:26px 24px; }
-.wordmark { font-size:1.12rem; font-weight:700; letter-spacing:.04em; }
-.wordmark span,.wordmark small { color:#858983; font-size:.58rem; letter-spacing:.15em; margin-left:5px; }
+.site-wordmark { align-items:center; display:inline-flex; gap:10px; }
+.site-wordmark > span { color:#858983; font-size:.58rem; font-weight:700; letter-spacing:.15em; }
 .attendee-account { align-items:center; color:#6f746f; display:flex; font-size:.76rem; gap:15px; }
 .attendee-account button { background:transparent; border:0; color:#727771; }
 .attendee-hero { border-bottom:1px solid var(--line); padding:85px 24px 72px; }
@@ -246,6 +248,7 @@ input:focus,textarea:focus { border-color:#687057; box-shadow:0 0 0 2px #eaf1c6;
 .register-card label { margin-top:7px; }
 .pass-page { background:#eceee8; padding:24px; }
 .pass-header { align-items:center; display:flex; justify-content:space-between; margin:0 auto 25px; max-width:520px; }
+.pass-header .site-wordmark { color:var(--ink); }
 .pass-live { align-items:center; color:#66705f; display:flex; font-size:.7rem; gap:6px; }
 .pass-card { background:#fff; box-shadow:0 20px 45px rgba(35,38,30,.08); margin:0 auto; max-width:520px; overflow:hidden; }
 .pass-card-top { align-items:flex-start; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; padding:27px; }
