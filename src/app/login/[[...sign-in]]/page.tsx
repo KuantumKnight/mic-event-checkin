@@ -36,6 +36,7 @@ export default function LoginPage() {
               identityPreviewEditButton: "mic-clerk-link",
             },
             options: {
+              logoImageUrl: "/mic-logo.webp",
               socialButtonsPlacement: "top",
               socialButtonsVariant: "blockButton",
             },
