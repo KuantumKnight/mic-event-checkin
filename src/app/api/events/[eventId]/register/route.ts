@@ -22,6 +22,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ eve
     p_email: null,
   });
 
-  if (error) return jsonError(error.message, supabaseErrorStatus(error.message));
+  if (error) {
+    const message = /capacity/i.test(error.message)
+      ? "This event is full. Choose another event or try again if a place becomes available."
+      : /already registered|duplicate|unique/i.test(error.message)
+        ? "You are already registered for this event."
+        : /started|ended|closed/i.test(error.message)
+          ? "Registration is closed for this event."
+          : /only attendee|profile/i.test(error.message)
+            ? "Your attendee profile is not ready yet. Please sign in again."
+            : "Registration could not be completed. Please try again.";
+    return jsonError(message, supabaseErrorStatus(error.message));
+  }
   return NextResponse.json({ registration: data?.[0] ?? null }, { status: 201 });
 }
