@@ -22,6 +22,15 @@ export type EventSummary = {
   status: "draft" | "published" | "cancelled" | "archived";
 };
 
+export const VENUES = [
+  { name: "Mahatma Gandhi Auditorium", capacity: 2500 },
+  { name: "Academic Block 1 - First Floor Conference Room", capacity: 120 },
+  { name: "Academic Block 1 - Seventh Floor NETHAJI Auditorium", capacity: 400 },
+  { name: "Academic Block 2 - First Floor Smart Classroom", capacity: 100 },
+  { name: "Admin Block Fifth Floor V.O.C Auditorium", capacity: 150 },
+  { name: "Admin Block Seventh Floor RUBY", capacity: 50 },
+] as const;
+
 export type EventStats = EventSummary & {
   arrival_rate: number;
   no_shows: number;
