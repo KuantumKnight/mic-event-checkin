@@ -285,6 +285,7 @@ input:focus,textarea:focus { border-color:#687057; box-shadow:0 0 0 2px #eaf1c6;
 .mobile-auth-brand { display:none; }
 .clerk-auth-wrap { max-width:440px; width:100%; }
 .mic-clerk-card { border:0; box-shadow:none; padding:24px 0 0; width:100%; }
+.mic-clerk-card img[src="/mic-logo.webp"] { display:block; height:76px !important; max-height:76px !important; max-width:76px !important; object-fit:contain !important; width:76px !important; }
 .mic-clerk-title { font-size:1.5rem; letter-spacing:-.03em; }
 .mic-clerk-subtitle { color:#777c77; }
 .mic-clerk-social { border-color:#cfd1ce; box-shadow:none; min-height:44px; }

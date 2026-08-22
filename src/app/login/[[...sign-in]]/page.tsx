@@ -7,8 +7,8 @@ export default function LoginPage() {
   return <main className="auth-page">
     <div className="auth-side">
       <Link href="/" className="back-link"><ArrowLeft size={15} /> Back to overview</Link>
-      <div className="auth-side-copy"><BrandMark /><span className="eyebrow light">A calmer check-in desk</span><h1>Make the room feel ready.</h1><p>MIC keeps the details quiet, so organizers can focus on the people in front of them.</p></div>
-      <span className="auth-side-foot">MIC Development Department · 2026</span>
+      <div className="auth-side-copy"><BrandMark /><span className="eyebrow light">Event access</span><h1>Manage arrivals with confidence.</h1><p>Sign in to create events, issue attendee passes, and run the check-in desk.</p></div>
+      <span className="auth-side-foot">MIC Event Check-in</span>
     </div>
     <div className="auth-main">
       <div className="mobile-auth-brand"><BrandMark compact /></div>
@@ -37,6 +37,8 @@ export default function LoginPage() {
             },
             options: {
               logoImageUrl: "/mic-logo.webp",
+              logoLinkUrl: "/",
+              logoPlacement: "outside",
               socialButtonsPlacement: "top",
               socialButtonsVariant: "blockButton",
             },
