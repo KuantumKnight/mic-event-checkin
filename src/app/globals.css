@@ -283,6 +283,14 @@ input:focus,textarea:focus { border-color:#687057; box-shadow:0 0 0 2px #eaf1c6;
 .eyebrow.light { color:#a9bc73; }
 .auth-main { align-items:center; display:flex; flex-direction:column; justify-content:center; padding:40px; }
 .mobile-auth-brand { display:none; }
+.clerk-auth-wrap { max-width:440px; width:100%; }
+.mic-clerk-card { border:0; box-shadow:none; padding:24px 0 0; width:100%; }
+.mic-clerk-title { font-size:1.5rem; letter-spacing:-.03em; }
+.mic-clerk-subtitle { color:#777c77; }
+.mic-clerk-social { border-color:#cfd1ce; box-shadow:none; min-height:44px; }
+.mic-clerk-primary { background:#252825; min-height:44px; }
+.mic-clerk-primary:hover { background:#3d443c; }
+.mic-clerk-link { color:#687057; }
 .auth-heading { margin-bottom:28px; max-width:420px; width:100%; }
 .auth-heading h2 { font-size:2.5rem; margin-top:10px; }
 .auth-heading p { margin-top:8px; }
