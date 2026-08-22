@@ -37,5 +37,5 @@ export function QrScanner({ onScan }: { onScan: (token: string) => Promise<void>
     };
   }, [onScan]);
 
-  return <div className="camera-reader"><div id="mic-qr-reader" /><div className="camera-status">{status === "Starting camera…" ? <Loader2 size={14} className="spin" /> : <Camera size={14} />}{status}</div></div>;
+  return <div className="camera-reader"><div id="mic-qr-reader" /><div className="camera-guide" aria-hidden="true" /><div className="camera-status">{status === "Starting camera…" ? <Loader2 size={14} className="spin" /> : <Camera size={14} />}{status}</div></div>;
 }

@@ -178,7 +178,8 @@ input:focus,textarea:focus { border-color:#687057; box-shadow:0 0 0 2px #eaf1c6;
 #mic-qr-reader { min-height:480px; }
 #mic-qr-reader video { height:auto !important; max-height:600px; object-fit:cover; width:100% !important; }
 #mic-qr-reader__dashboard_section_csr button { background:#fff; border:0; border-radius:4px; padding:6px 10px; }
-.camera-status { align-items:center; bottom:0; color:#e2e6dc; display:flex; font-size:.75rem; gap:8px; left:0; padding:13px 15px; position:absolute; right:0; }
+.camera-guide { aspect-ratio:1; border:1px solid rgba(255,255,255,.72); border-radius:12px; box-shadow:0 0 0 1px rgba(0,0,0,.18), inset 0 0 0 1px rgba(255,255,255,.12); left:50%; max-height:70%; max-width:70%; pointer-events:none; position:absolute; top:50%; transform:translate(-50%,-50%); width:min(70%,320px); z-index:3; }
+.camera-status { align-items:center; bottom:0; color:#e2e6dc; display:flex; font-size:.75rem; gap:8px; left:0; padding:13px 15px; position:absolute; right:0; z-index:4; }
 .scanner-help { font-size:.68rem; margin-top:12px; }
 .scan-result { align-items:center; animation:resultIn .18s ease-out; display:flex; gap:14px; left:50%; max-width:540px; padding:16px 19px; position:fixed; top:50%; transform:translate(-50%,-50%); width:calc(100% - 40px); z-index:4; }
 @keyframes resultIn { from { opacity:0; transform:translate(-50%,-46%); } to { opacity:1; transform:translate(-50%,-50%); } }
