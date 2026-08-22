@@ -9,5 +9,5 @@ export default async function NewEventPage() {
   const profile = await getProfile();
   if (!profile) redirect("/login");
   if (profile.role !== "organizer") redirect("/events");
-  return <OrganizerShell profile={profile}><PageHeader eyebrow="Event setup" title="Create a real event." description="This form writes to the same capacity-controlled database used by the registration and scanner flows." /><EventCreateForm /></OrganizerShell>;
+  return <OrganizerShell profile={profile}><PageHeader eyebrow="Event setup" title="Create an event" description="Set the schedule, location, capacity, and publication status." /><EventCreateForm /></OrganizerShell>;
 }

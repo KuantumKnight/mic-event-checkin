@@ -8,7 +8,7 @@ const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono"
 
 export const metadata: Metadata = {
   title: "MIC Check-in",
-  description: "A calm, realtime event check-in desk for MIC clubs and communities.",
+  description: "Event registration and QR check-in for MIC clubs and communities.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
