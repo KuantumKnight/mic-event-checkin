@@ -16,7 +16,7 @@ export function QrScanner({ onScan }: { onScan: (token: string) => Promise<void>
       const scanner = new module.Html5Qrcode("mic-qr-reader");
       scannerRef.current = scanner;
       try {
-        await scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 220, height: 220 } }, async (decodedText) => {
+        await scanner.start({ facingMode: "environment" }, { fps: 10 }, async (decodedText) => {
           if (!active) return;
           const now = Date.now();
           if (scanLockRef.current || (decodedText === lastTokenRef.current.token && now - lastTokenRef.current.at < 1500)) return;
